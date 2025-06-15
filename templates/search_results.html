@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Qidiruv natijalari - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<style>
+    #searchMap {
+        height: 400px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    .station-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .station-card:hover {
+        transform: translateY(-5px);
+    }
+    .station-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 15px;
+        position: relative;
+    }
+    .station-body {
+        padding: 15px;
+    }
+    .station-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .station-service-icon {
+        margin-right: 10px;
+        color: #0d6efd;
+    }
+    .filter-card {
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Qidiruv natijalari: "{{ query }}"</h1>
+    
+    <!-- Filters -->
+    <div class="filter-card">
+        <form id="filter-form" action="{{ url_for('search') }}" method="GET">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Stansiya nomi yoki manzili">
+                        <label for="search">Stansiya nomi yoki manzili</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="city" name="city">
+                            <option value="">Tanlang</option>
+                            <option value="Tashkent" {% if request.args.get('city') == 'Tashkent' %}selected{% endif %}>Toshkent</option>
+                            <option value="Samarkand" {% if request.args.get('city') == 'Samarkand' %}selected{% endif %}>Samarqand</option>
+                            <option value="Bukhara" {% if request.args.get('city') == 'Bukhara' %}selected{% endif %}>Buxoro</option>
+                            <option value="Namangan" {% if request.args.get('city') == 'Namangan' %}selected{% endif %}>Namangan</option>
+                            <option value="Andijan" {% if request.args.get('city') == 'Andijan' %}selected{% endif %}>Andijon</option>
+                        </select>
+                        <label for="city">Shahar</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="fuel_type" name="fuel_type">
+                            <option value="">Tanlang</option>
+                            <option value="AI-92" {% if request.args.get('fuel_type') == 'AI-92' %}selected{% endif %}>AI-92</option>
+                            <option value="AI-95" {% if request.args.get('fuel_type') == 'AI-95' %}selected{% endif %}>AI-95</option>
+                            <option value="Diesel" {% if request.args.get('fuel_type') == 'Diesel' %}selected{% endif %}>Dizel</option>
+                            <option value="Gas" {% if request.args.get('fuel_type') == 'Gas' %}selected{% endif %}>Gaz</option>
+                        </select>
+                        <label for="fuel_type">Yoqilg'i turi</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary h-100 w-100">
+                        <i class="fas fa-search me-1"></i> Qidirish
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Map -->
+    <div id="searchMap"></div>
+    
+    <!-- Results -->
+    <h2 class="mb-4">Topilgan stansiyalar ({{ stations|length }})</h2>
+    
+    {% if stations %}
+        <div class="row">
+            {% for station in stations %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="station-card h-100">
+                    <div class="station-header">
+                        <h3>{{ station.name }}</h3>
+                        {% if station.is_open %}
+                        <span class="station-status bg-success">Ochiq</span>
+                        {% else %}
+                        <span class="station-status bg-danger">Yopiq</span>
+                        {% endif %}
+                    </div>
+                    <div class="station-body">
+                        <p><i class="fas fa-map-marker-alt me-2"></i>{{ station.address }}</p>
+                        <p><i class="fas fa-city me-2"></i>{{ station.city }}</p>
+                        
+                        <hr>
+                        
+                        <div class="mb-3">
+                            <h5>Yoqilg'i narxlari:</h5>
+                            <ul class="list-unstyled">
+                                {% for fuel in station.fuels %}
+                                {% if fuel.available %}
+                                <li class="mb-1">{{ fuel.type }}: <strong class="text-primary">{{ fuel.price }} so'm</strong></li>
+                                {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h5>Xizmatlar:</h5>
+                            <div>
+                                {% if station.has_shop %}<i class="fas fa-shopping-cart station-service-icon" title="Do'kon"></i>{% endif %}
+                                {% if station.has_cafe %}<i class="fas fa-coffee station-service-icon" title="Kafe"></i>{% endif %}
+                                {% if station.has_carwash %}<i class="fas fa-car station-service-icon" title="Avtoyuvish"></i>{% endif %}
+                                {% if station.has_toilet %}<i class="fas fa-restroom station-service-icon" title="Tualet"></i>{% endif %}
+                                {% if station.accepts_card %}<i class="fas fa-credit-card station-service-icon" title="Karta bilan to'lash"></i>{% endif %}
+                            </div>
+                        </div>
+                        
+                        <a href="{{ url_for('station_detail', station_id=station.id) }}" class="btn btn-primary w-100">Batafsil</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> "{{ query }}" so'rovi bo'yicha stansiyalar topilmadi.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script>
+    // Initialize map
+    var searchMap = L.map('searchMap').setView([41.2995, 69.2401], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(searchMap);
+    
+    // Load stations data
+    fetch('{{ url_for("get_stations") }}')
+        .then(response => response.json())
+        .then(stations => {
+            // Create a bounds object to fit all stations
+            var bounds = L.latLngBounds();
+            var filteredStations = [];
+            
+            // Filter stations based on query parameters
+            const query = '{{ query }}';
+            const city = '{{ request.args.get("city", "") }}';
+            const fuelType = '{{ request.args.get("fuel_type", "") }}';
+            
+            stations.forEach(station => {
+                let match = true;
+                
+                if (query && !station.name.toLowerCase().includes(query.toLowerCase()) && 
+                    !station.address.toLowerCase().includes(query.toLowerCase())) {
+                    match = false;
+                }
+                
+                if (city && station.city !== city) {
+                    match = false;
+                }
+                
+                if (fuelType && (!station.fuels[fuelType] || !station.fuels[fuelType].available)) {
+                    match = false;
+                }
+                
+                if (match) {
+                    filteredStations.push(station);
+                    
+                    var popupContent = `
+                        <strong>${station.name}</strong><br>
+                        <i class="fas fa-map-marker-alt"></i> ${station.address}<br>
+                        <i class="fas fa-city"></i> ${station.city}<br><br>
+                        
+                        <strong>Yoqilg'i narxlari:</strong><br>
+                    `;
+                    
+                    for (const [type, data] of Object.entries(station.fuels)) {
+                        if (data.available) {
+                            popupContent += `${type}: <strong>${data.price} so'm</strong><br>`;
+                        }
+                    }
+                    
+                    popupContent += `<br><a href="/station/${station.id}" class="btn btn-sm btn-primary">Batafsil</a>`;
+                    
+                    var marker = L.marker([station.lat, station.lng])
+                        .addTo(searchMap)
+                        .bindPopup(popupContent);
+                        
+                    // Use different icon color based on station status
+                    var iconClass = station.is_open ? 'text-success' : 'text-danger';
+                    marker._icon.classList.add(iconClass);
+                    
+                    // Add this point to the bounds
+                    bounds.extend([station.lat, station.lng]);
+                }
+            });
+            
+            // If we have stations, fit the map to show all markers
+            if (filteredStations.length > 0) {
+                searchMap.fitBounds(bounds, { padding: [50, 50] });
+            }
+        });
+</script>
+{% endblock %}

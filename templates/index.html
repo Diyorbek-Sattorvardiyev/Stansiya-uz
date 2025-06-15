@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}Bosh sahifa - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .hero-section {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1563237023-c4c282a8b75e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 80px 0;
+        margin-bottom: 30px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    .feature-box {
+        border-radius: 10px;
+        padding: 20px;
+        height: 100%;
+        transition: transform 0.3s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .feature-box:hover {
+        transform: translateY(-5px);
+    }
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: #0d6efd;
+    }
+    .fuel-price-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .fuel-price-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 10px 15px;
+    }
+    .fuel-price-body {
+        padding: 15px;
+    }
+    .fuel-price-label {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .fuel-price-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+    .station-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .station-card:hover {
+        transform: translateY(-5px);
+    }
+    .station-header {
+        position: relative;
+        height: 180px;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('https://images.unsplash.com/photo-1545459720-adf272739294?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 15px;
+    }
+    .station-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .station-body {
+        padding: 15px;
+    }
+    .station-service-icon {
+        margin-right: 10px;
+        color: #0d6efd;
+    }
+    .search-box {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-top: -50px;
+        position: relative;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">Eng yaqin yoqilg'i quyish stansiyalarini toping</h1>
+        <p class="lead mb-4">Bizning xizmatimiz orqali O'zbekiston bo'ylab eng yaqin va qulay yoqilg'i quyish stansiyalarini toping!</p>
+        <button id="find-nearest-btn" class="btn btn-primary btn-lg me-2">
+            <i class="fas fa-location-arrow me-1"></i> Eng yaqinini topish
+        </button>
+        <a href="{{ url_for('stations') }}" class="btn btn-outline-light btn-lg">
+            <i class="fas fa-list me-1"></i> Barcha stansiyalar
+        </a>
+    </div>
+</section>
+
+<!-- Search Box -->
+<div class="container">
+    <div class="search-box">
+        <form action="{{ url_for('search') }}" method="GET">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="search" name="q" placeholder="Stansiya nomi yoki manzili">
+                        <label for="search">Stansiya nomi yoki manzili</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="city" name="city">
+                            <option value="">Tanlang</option>
+                            <option value="Tashkent">Toshkent</option>
+                            <option value="Samarkand">Samarqand</option>
+                            <option value="Bukhara">Buxoro</option>
+                            <option value="Namangan">Namangan</option>
+                            <option value="Andijan">Andijon</option>
+                        </select>
+                        <label for="city">Shahar</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="fuel_type" name="fuel_type">
+                            <option value="">Tanlang</option>
+                            <option value="AI-92">AI-92</option>
+                            <option value="AI-95">AI-95</option>
+                            <option value="Diesel">Dizel</option>
+                            <option value="Gas">Gaz</option>
+                        </select>
+                        <label for="fuel_type">Yoqilg'i turi</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary h-100 w-100">
+                        <i class="fas fa-search me-1"></i> Qidirish
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Features -->
+<section class="container mb-5">
+    <h2 class="text-center mb-4">Bizning afzalliklarimiz</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-box bg-light">
+                <div class="text-center">
+                    <i class="fas fa-map-marked-alt feature-icon"></i>
+                    <h3 class="h4">Interaktiv xarita</h3>
+                    <p>Barcha yoqilg'i quyish stansiyalarini xaritada ko'rib chiqing va eng yaqinini toping.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-box bg-light">
+                <div class="text-center">
+                    <i class="fas fa-tags feature-icon"></i>
+                    <h3 class="h4">Haqiqiy vaqtdagi narxlar</h3>
+                    <p>Har bir stansiya uchun narxlarni tekshiring va eng arzon yoqilg'i quyish stansiyasini toping.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-box bg-light">
+                <div class="text-center">
+                    <i class="fas fa-star feature-icon"></i>
+                    <h3 class="h4">Foydalanuvchi sharhlari</h3>
+                    <p>Boshqa haydovchilarning sharhlarini o'qing va o'z fikringizni ulashing.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="container mb-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Hududdagi stansiyalar</h2>
+            <div id="map"></div>
+        </div>
+        <div class="col-lg-4">
+            <h2 class="mb-4">O'rtacha narxlar</h2>
+            
+            <div class="fuel-price-card">
+                <div class="fuel-price-header">
+                    <h5 class="mb-0">AI-92</h5>
+                </div>
+                <div class="fuel-price-body text-center">
+                    <div class="fuel-price-label">O'rtacha narx</div>
+                    <div class="fuel-price-value mb-2" id="avg-ai92">7000 so'm</div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fuel-price-card">
+                <div class="fuel-price-header">
+                    <h5 class="mb-0">AI-95</h5>
+                </div>
+                <div class="fuel-price-body text-center">
+                    <div class="fuel-price-label">O'rtacha narx</div>
+                    <div class="fuel-price-value mb-2" id="avg-ai95">8000 so'm</div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fuel-price-card">
+                <div class="fuel-price-header">
+                    <h5 class="mb-0">Dizel</h5>
+                </div>
+                <div class="fuel-price-body text-center">
+                    <div class="fuel-price-label">O'rtacha narx</div>
+                    <div class="fuel-price-value mb-2" id="avg-diesel">7500 so'm</div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 80%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fuel-price-card">
+                <div class="fuel-price-header">
+                    <h5 class="mb-0">Gaz</h5>
+                </div>
+                <div class="fuel-price-body text-center">
+                    <div class="fuel-price-label">O'rtacha narx</div>
+                    <div class="fuel-price-value mb-2" id="avg-gas">4000 so'm</div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Stations -->
+<section class="container mb-5">
+    <h2 class="mb-4">Mashhur stansiyalar</h2>
+    <div class="row">
+        {% for station in stations[:3] %}
+        <div class="col-md-4">
+            <div class="station-card">
+                <div class="station-header">
+                    <h3>{{ station.name }}</h3>
+                    <p><i class="fas fa-map-marker-alt me-1"></i> {{ station.address }}</p>
+                    {% if station.is_open %}
+                    <span class="station-status bg-success">Ochiq</span>
+                    {% else %}
+                    <span class="station-status bg-danger">Yopiq</span>
+                    {% endif %}
+                </div>
+                <div class="station-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>Yoqilg'i narxlari:</strong>
+                        </div>
+                        <ul class="list-unstyled">
+                            {% for fuel in station.fuels %}
+                            {% if fuel.available %}
+                            <li class="mb-1">{{ fuel.type }}: <strong class="text-primary">{{ fuel.price }} so'm</strong></li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Xizmatlar:</strong><br>
+                        {% if station.has_shop %}<i class="fas fa-shopping-cart station-service-icon" title="Do'kon"></i>{% endif %}
+                        {% if station.has_cafe %}<i class="fas fa-coffee station-service-icon" title="Kafe"></i>{% endif %}
+                        {% if station.has_carwash %}<i class="fas fa-car station-service-icon" title="Avtoyuvish"></i>{% endif %}
+                        {% if station.has_toilet %}<i class="fas fa-restroom station-service-icon" title="Tualet"></i>{% endif %}
+                        {% if station.accepts_card %}<i class="fas fa-credit-card station-service-icon" title="Karta bilan to'lash"></i>{% endif %}
+                    </div>
+                    <a href="{{ url_for('station_detail', station_id=station.id) }}" class="btn btn-primary w-100">Batafsil</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="text-center mt-4">
+        <a href="{{ url_for('stations') }}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-list me-1"></i> Barcha stansiyalarni ko'rish
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script>
+    // Initialize map
+    var map = L.map('map').setView([41.2995, 69.2401], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Load stations data
+    fetch('{{ url_for("get_stations") }}')
+        .then(response => response.json())
+        .then(stations => {
+            stations.forEach(station => {
+                var popupContent = `
+                    <strong>${station.name}</strong><br>
+                    <i class="fas fa-map-marker-alt"></i> ${station.address}<br>
+                    <i class="fas fa-city"></i> ${station.city}<br><br>
+                    
+                    <strong>Yoqilg'i narxlari:</strong><br>
+                `;
+                
+                for (const [type, data] of Object.entries(station.fuels)) {
+                    if (data.available) {
+                        popupContent += `${type}: <strong>${data.price} so'm</strong><br>`;
+                    }
+                }
+                
+                popupContent += `<br><a href="/station/${station.id}" class="btn btn-sm btn-primary">Batafsil</a>`;
+                
+                var marker = L.marker([station.lat, station.lng])
+                    .addTo(map)
+                    .bindPopup(popupContent);
+                    
+                // Use different icon color based on station status
+                var iconClass = station.is_open ? 'text-success' : 'text-danger';
+                marker._icon.classList.add(iconClass);
+            });
+            
+            // Calculate average fuel prices
+            calculateAveragePrices(stations);
+        });
+    
+    function calculateAveragePrices(stations) {
+        let prices = {
+            'AI-92': [],
+            'AI-95': [],
+            'Diesel': [],
+            'Gas': []
+        };
+        
+        stations.forEach(station => {
+            for (const [type, data] of Object.entries(station.fuels)) {
+                if (data.available) {
+                    prices[type].push(data.price);
+                }
+            }
+        });
+        
+        for (const [type, priceList] of Object.entries(prices)) {
+            if (priceList.length > 0) {
+                const avgPrice = priceList.reduce((a, b) => a + b, 0) / priceList.length;
+                const elementId = type === 'AI-92' ? 'avg-ai92' : 
+                                  type === 'AI-95' ? 'avg-ai95' : 
+                                  type === 'Diesel' ? 'avg-diesel' : 'avg-gas';
+                
+                document.getElementById(elementId).textContent = Math.round(avgPrice) + ' so\'m';
+            }
+        }
+    }
+    
+    // Find nearest station
+    document.getElementById('find-nearest-btn').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var userLat = position.coords.latitude;
+                var userLng = position.coords.longitude;
+                
+                // Center map on user location
+                map.setView([userLat, userLng], 14);
+                
+                // Add user marker
+                var userMarker = L.marker([userLat, userLng])
+                    .addTo(map)
+                    .bindPopup("Sizning joylashuvingiz")
+                    .openPopup();
+                
+                // Fetch stations and find nearest
+                fetch('{{ url_for("get_stations") }}')
+                    .then(response => response.json())
+                    .then(stations => {
+                        let nearestStation = null;
+                        let shortestDistance = Infinity;
+                        
+                        stations.forEach(station => {
+                            const distance = calculateDistance(userLat, userLng, station.lat, station.lng);
+                            if (distance < shortestDistance) {
+                                shortestDistance = distance;
+                                nearestStation = station;
+                            }
+                        });
+                        
+                        if (nearestStation) {
+                            // Draw line to nearest station
+                            L.polyline([
+                                [userLat, userLng],
+                                [nearestStation.lat, nearestStation.lng]
+                            ], {color: 'blue'}).addTo(map);
+                            
+                            // Show alert
+                            alert(`Eng yaqin stansiya: ${nearestStation.name}\nMasofa: ${(shortestDistance).toFixed(1)} km`);
+                        }
+                    });
+            }, function(error) {
+                alert("Joylashuvni olishda xatolik yuz berdi: " + error.message);
+            });
+        } else {
+            alert("Joylashuvni aniqlash brauzeringizda qo'llab-quvvatlanmaydi");
+        }
+    });
+    
+    // Calculate distance between two coordinates (haversine formula)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the earth in km
+        const dLat = deg2rad(lat2 - lat1);
+        const dLon = deg2rad(lon2 - lon1);
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        const distance = R * c; // Distance in km
+        return distance;
+    }
+    
+    function deg2rad(deg) {
+        return deg * (Math.PI/180);
+    }
+</script>
+{% endblock %}

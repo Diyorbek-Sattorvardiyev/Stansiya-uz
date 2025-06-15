@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yoqilg'i Quyish Stansiyalari{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-gas-pump me-2"></i>Yoqilg'i Stansiyalari
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Bosh sahifa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('stations') }}">Stansiyalar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('contact') }}">Bog'lanish</a>
+                    </li>
+                </ul>
+                
+                <!-- Search Form -->
+                <form class="d-flex me-3" action="{{ url_for('search') }}" method="GET">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Qidirish..." aria-label="Search">
+                    <button class="btn btn-light" type="submit"><i class="fas fa-search"></i></button>
+                </form>
+                
+                <!-- User Menu -->
+                <ul class="navbar-nav">
+                    {% if session.get('user_id') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user me-1"></i> {{ session.get('username') }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                {% if session.get('is_admin') %}
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Admin panel</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{{ url_for('my_favorites') }}"><i class="fas fa-heart me-2"></i>Sevimlilar</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('my_messages') }}"><i class="fas fa-envelope me-2"></i>Xabarlar</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Chiqish</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt me-1"></i> Kirish</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}"><i class="fas fa-user-plus me-1"></i> Ro'yxatdan o'tish</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Yoqilg'i Quyish Stansiyalari</h5>
+                    <p>O'zbekistondagi eng yaxshi yoqilg'i quyish stansiyalari haqida ma'lumot beruvchi platforma.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Foydali havolalar</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('index') }}" class="text-light">Bosh sahifa</a></li>
+                        <li><a href="{{ url_for('stations') }}" class="text-light">Stansiyalar</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="text-light">Bog'lanish</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Bog'lanish</h5>
+                    <address>
+                        <i class="fas fa-map-marker-alt me-2"></i> Toshkent, O'zbekiston<br>
+                        <i class="fas fa-phone me-2"></i> +998 99 123 45 67<br>
+                        <i class="fas fa-envelope me-2"></i> info@yoqilgi.uz
+                    </address>
+                    <div class="social-links mt-2">
+                        <a href="#" class="text-light me-2"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light me-2"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-telegram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-3">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2025 Yoqilg'i Quyish Stansiyalari. Barcha huquqlar himoyalangan.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

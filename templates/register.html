@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Ro'yxatdan o'tish - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<style>
+    .register-card {
+        max-width: 500px;
+        margin: 50px auto;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .register-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    .register-body {
+        padding: 30px;
+    }
+    .register-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="register-card">
+        <div class="register-header">
+            <i class="fas fa-user-plus register-icon"></i>
+            <h2>Ro'yxatdan o'tish</h2>
+        </div>
+        <div class="register-body">
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Foydalanuvchi nomi</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Parol</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label">Parolni tasdiqlang</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Ro'yxatdan o'tish</button>
+                </div>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p>Hisobingiz bormi? <a href="{{ url_for('login') }}">Tizimga kiring</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Password matching validation
+    const password = document.getElementById('password');
+    const confirm_password = document.getElementById('confirm_password');
+    
+    function validatePassword() {
+        if (password.value !== confirm_password.value) {
+            confirm_password.setCustomValidity("Parollar mos kelmayapti");
+        } else {
+            confirm_password.setCustomValidity('');
+        }
+    }
+    
+    password.addEventListener('change', validatePassword);
+    confirm_password.addEventListener('keyup', validatePassword);
+</script>
+{% endblock %}

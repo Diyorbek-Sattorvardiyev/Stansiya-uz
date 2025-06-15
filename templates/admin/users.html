@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Foydalanuvchilar boshqaruvi - Admin panel{% endblock %}
+
+{% block head %}
+<style>
+    .admin-sidebar {
+        background-color: #343a40;
+        color: white;
+        min-height: calc(100vh - 56px);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 56px;
+    }
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.75);
+        padding: 0.8rem 1rem;
+        border-radius: 0;
+    }
+    .admin-sidebar .nav-link:hover {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .admin-sidebar .nav-link.active {
+        color: white;
+        background-color: #0d6efd;
+    }
+    .admin-sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 5px;
+    }
+    .user-role-badge {
+        width: 80px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar d-md-block d-none">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_stations') }}">
+                            <i class="fas fa-gas-pump"></i>
+                            Stansiyalar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users"></i>
+                            Foydalanuvchilar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_messages') }}">
+                            <i class="fas fa-envelope"></i>
+                            Xabarlar
+                            {% if unread_messages_count is defined and unread_messages_count > 0 %}
+                                <span class="badge bg-danger ms-2">{{ unread_messages_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-arrow-left"></i>
+                            Saytga qaytish
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-users me-2"></i>Foydalanuvchilar boshqaruvi</h1>
+                <div class="d-md-none">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="mobileMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            Menyu
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMenuBtn">
+                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_stations') }}"><i class="fas fa-gas-pump me-2"></i>Stansiyalar</a></li>
+                            <li><a class="dropdown-item active" href="{{ url_for('admin_users') }}"><i class="fas fa-users me-2"></i>Foydalanuvchilar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_messages') }}"><i class="fas fa-envelope me-2"></i>Xabarlar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('index') }}"><i class="fas fa-arrow-left me-2"></i>Saytga qaytish</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search & Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form action="{{ url_for('admin_users') }}" method="GET">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" name="q" placeholder="Foydalanuvchi nomi yoki email" value="{{ request.args.get('q', '') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" name="role">
+                                    <option value="">Barcha foydalanuvchilar</option>
+                                    <option value="admin" {% if request.args.get('role') == 'admin' %}selected{% endif %}>Faqat adminlar</option>
+                                    <option value="user" {% if request.args.get('role') == 'user' %}selected{% endif %}>Oddiy foydalanuvchilar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">Qidirish</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Foydalanuvchi nomi</th>
+                                    <th>Email</th>
+                                    <th>Ro'yxatdan o'tgan</th>
+                                    <th>Status</th>
+                                    <th>Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                        <span class="badge bg-danger user-role-badge">Admin</span>
+                                        {% else %}
+                                        <span class="badge bg-info user-role-badge">Foydalanuvchi</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-success action-btn view-user-btn" title="Batafsil" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-user-id="{{ user.id }}" data-username="{{ user.username }}" data-email="{{ user.email }}" data-created="{{ user.created_at.strftime('%d.%m.%Y') }}" data-is-admin="{{ 'true' if user.is_admin else 'false' }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View User Modal -->
+<div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewUserModalLabel">Foydalanuvchi ma'lumotlari</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-user-circle fa-5x text-primary"></i>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Foydalanuvchi nomi</label>
+                    <input type="text" class="form-control" id="modal-username" readonly>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="modal-email" readonly>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Ro'yxatdan o'tgan</label>
+                        <input type="text" class="form-control" id="modal-created" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <input type="text" class="form-control" id="modal-status" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // View user details
+    const viewButtons = document.querySelectorAll('.view-user-btn');
+    const modalUsername = document.getElementById('modal-username');
+    const modalEmail = document.getElementById('modal-email');
+    const modalCreated = document.getElementById('modal-created');
+    const modalStatus = document.getElementById('modal-status');
+    
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.getAttribute('data-username');
+            const email = this.getAttribute('data-email');
+            const created = this.getAttribute('data-created');
+            const isAdmin = this.getAttribute('data-is-admin') === 'true';
+            
+            modalUsername.value = username;
+            modalEmail.value = email;
+            modalCreated.value = created;
+            modalStatus.value = isAdmin ? 'Administrator' : 'Oddiy foydalanuvchi';
+        });
+    });
+</script>
+{% endblock %}

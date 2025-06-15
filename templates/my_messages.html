@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Mening xabarlarim - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<style>
+    .page-header {
+        background-color: #f8f9fa;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+    .message-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .message-card:hover {
+        transform: translateY(-5px);
+    }
+    .message-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        position: relative;
+    }
+    .message-body {
+        padding: 15px;
+    }
+    .message-footer {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #eee;
+    }
+    .message-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .message-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .message-response {
+        background-color: #e9ecef;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 50px 0;
+    }
+    .empty-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header text-center">
+        <h1 class="display-5"><i class="fas fa-envelope me-3"></i>Mening xabarlarim</h1>
+        <p class="lead">Siz yuborgan barcha xabarlar va javoblar</p>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{{ url_for('contact') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Yangi xabar yuborish
+        </a>
+    </div>
+    
+    <!-- Messages List -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="message-card">
+            <div class="message-header">
+                <h4>{{ message.subject }}</h4>
+                {% if message.is_read and message.response %}
+                <span class="message-status bg-success text-white">Javob berilgan</span>
+                {% elif message.is_read %}
+                <span class="message-status bg-info text-white">Ko'rilgan</span>
+                {% else %}
+                <span class="message-status bg-warning text-dark">Yangi</span>
+                {% endif %}
+            </div>
+            <div class="message-body">
+                <p>{{ message.message }}</p>
+                
+                {% if message.response %}
+                <div class="message-response">
+                    <h5>Administratordan javob:</h5>
+                    <p>{{ message.response }}</p>
+                    <div class="message-date">
+                        <small>{{ message.responded_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="message-footer d-flex justify-content-between align-items-center">
+                <div class="message-date">
+                    Yuborilgan: {{ message.created_at.strftime('%d.%m.%Y %H:%M') }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3>Hozircha xabarlar yo'q</h3>
+            <p class="text-muted">Siz hali birorta xabar yubormagansiz.</p>
+            <a href="{{ url_for('contact') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-1"></i> Yangi xabar yuborish
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

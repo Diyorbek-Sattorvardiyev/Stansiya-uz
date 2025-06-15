@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Yangi stansiya qo'shish - Admin panel{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<style>
+    .admin-sidebar {
+        background-color: #343a40;
+        color: white;
+        min-height: calc(100vh - 56px);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 56px;
+    }
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.75);
+        padding: 0.8rem 1rem;
+        border-radius: 0;
+    }
+    .admin-sidebar .nav-link:hover {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .admin-sidebar .nav-link.active {
+        color: white;
+        background-color: #0d6efd;
+    }
+    .admin-sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    #mapSelector {
+        height: 400px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .card-header-tabs .nav-link {
+        font-weight: 500;
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .fuel-card {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 15px;
+    }
+    .fuel-card-header {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-bottom: 1px solid #dee2e6;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    .fuel-card-body {
+        padding: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar d-md-block d-none">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_stations') }}">
+                            <i class="fas fa-gas-pump"></i>
+                            Stansiyalar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users"></i>
+                            Foydalanuvchilar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_messages') }}">
+                            <i class="fas fa-envelope"></i>
+                            Xabarlar
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-arrow-left"></i>
+                            Saytga qaytish
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-plus me-2"></i>Yangi stansiya qo'shish</h1>
+                <div class="d-md-none">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="mobileMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            Menyu
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMenuBtn">
+                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item active" href="{{ url_for('admin_stations') }}"><i class="fas fa-gas-pump me-2"></i>Stansiyalar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}"><i class="fas fa-users me-2"></i>Foydalanuvchilar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_messages') }}"><i class="fas fa-envelope me-2"></i>Xabarlar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('index') }}"><i class="fas fa-arrow-left me-2"></i>Saytga qaytish</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <a href="{{ url_for('admin_stations') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Orqaga
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="stationAddTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
+                                <i class="fas fa-info-circle me-1"></i> Umumiy ma'lumotlar
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="fuels-tab" data-bs-toggle="tab" data-bs-target="#fuels" type="button" role="tab" aria-controls="fuels" aria-selected="false">
+                                <i class="fas fa-gas-pump me-1"></i> Yoqilg'i narxlari
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="location-tab" data-bs-toggle="tab" data-bs-target="#location" type="button" role="tab" aria-controls="location" aria-selected="false">
+                                <i class="fas fa-map-marker-alt me-1"></i> Joylashuv
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin_station_add') }}" method="POST">
+                        <div class="tab-content" id="stationAddTabsContent">
+                            <!-- General Info Tab -->
+                            <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="name" class="form-label">Stansiya nomi</label>
+                                        <input type="text" class="form-control" id="name" name="name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Telefon raqami</label>
+                                        <input type="text" class="form-control" id="phone" name="phone">
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="address" class="form-label">Manzil</label>
+                                        <input type="text" class="form-control" id="address" name="address" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="city" class="form-label">Shahar</label>
+                                        <select class="form-select" id="city" name="city" required>
+                                            <option value="Tashkent">Toshkent</option>
+                                            <option value="Samarkand">Samarqand</option>
+                                            <option value="Bukhara">Buxoro</option>
+                                            <option value="Namangan">Namangan</option>
+                                            <option value="Andijan">Andijon</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="opening_hours" class="form-label">Ish vaqti</label>
+                                    <input type="text" class="form-control" id="opening_hours" name="opening_hours" placeholder="Masalan: 24/7 yoki 09:00-21:00">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Xizmatlar</label>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="has_shop" name="has_shop" checked>
+                                                <label class="form-check-label" for="has_shop">
+                                                    <i class="fas fa-shopping-cart me-1"></i> Do'kon
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="has_cafe" name="has_cafe">
+                                                <label class="form-check-label" for="has_cafe">
+                                                    <i class="fas fa-coffee me-1"></i> Kafe
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="has_carwash" name="has_carwash">
+                                                <label class="form-check-label" for="has_carwash">
+                                                    <i class="fas fa-car me-1"></i> Avtoyuvish
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="has_toilet" name="has_toilet" checked>
+                                                <label class="form-check-label" for="has_toilet">
+                                                    <i class="fas fa-restroom me-1"></i> Tualet
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="accepts_card" name="accepts_card" checked>
+                                                <label class="form-check-label" for="accepts_card">
+                                                    <i class="fas fa-credit-card me-1"></i> Karta bilan to'lash
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="is_open" name="is_open" checked>
+                                                <label class="form-check-label" for="is_open">
+                                                    <i class="fas fa-door-open me-1"></i> Ochiq
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Fuel Prices Tab -->
+                            <div class="tab-pane fade" id="fuels" role="tabpanel" aria-labelledby="fuels-tab">
+                                <div class="fuel-card">
+                                    <div class="fuel-card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">AI-92</h5>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="add_ai92" name="add_ai92" checked>
+                                            <label class="form-check-label" for="add_ai92">Mavjud</label>
+                                        </div>
+                                    </div>
+                                    <div class="fuel-card-body">
+                                        <div class="mb-3">
+                                            <label for="price_ai92" class="form-label">Narx (so'm)</label>
+                                            <input type="number" class="form-control" id="price_ai92" name="price_ai92" value="7000" step="0.01" min="0">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="fuel-card">
+                                    <div class="fuel-card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">AI-95</h5>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="add_ai95" name="add_ai95" checked>
+                                            <label class="form-check-label" for="add_ai95">Mavjud</label>
+                                        </div>
+                                    </div>
+                                    <div class="fuel-card-body">
+                                        <div class="mb-3">
+                                            <label for="price_ai95" class="form-label">Narx (so'm)</label>
+                                            <input type="number" class="form-control" id="price_ai95" name="price_ai95" value="8000" step="0.01" min="0">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="fuel-card">
+                                    <div class="fuel-card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Dizel</h5>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="add_diesel" name="add_diesel" checked>
+                                            <label class="form-check-label" for="add_diesel">Mavjud</label>
+                                        </div>
+                                    </div>
+                                    <div class="fuel-card-body">
+                                        <div class="mb-3">
+                                            <label for="price_diesel" class="form-label">Narx (so'm)</label>
+                                            <input type="number" class="form-control" id="price_diesel" name="price_diesel" value="7500" step="0.01" min="0">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="fuel-card">
+                                    <div class="fuel-card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Gaz</h5>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="add_gas" name="add_gas" checked>
+                                            <label class="form-check-label" for="add_gas">Mavjud</label>
+                                        </div>
+                                    </div>
+                                    <div class="fuel-card-body">
+                                        <div class="mb-3">
+                                            <label for="price_gas" class="form-label">Narx (so'm)</label>
+                                            <input type="number" class="form-control" id="price_gas" name="price_gas" value="4000" step="0.01" min="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Location Tab -->
+                            <div class="tab-pane fade" id="location" role="tabpanel" aria-labelledby="location-tab">
+                                <div class="mb-3">
+                                    <label class="form-label">Xaritada joylashuvni tanlang</label>
+                                    <div id="mapSelector"></div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="latitude" class="form-label">Kenglik</label>
+                                        <input type="text" class="form-control" id="latitude" name="latitude" value="41.2995" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="longitude" class="form-label">Uzunlik</label>
+                                        <input type="text" class="form-control" id="longitude" name="longitude" value="69.2401" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('admin_stations') }}" class="btn btn-secondary">Bekor qilish</a>
+                            <button type="submit" class="btn btn-primary">Saqlash</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script>
+    // Initialize map
+    var mapSelector = L.map('mapSelector').setView([41.2995, 69.2401], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapSelector);
+    
+    // Add marker for current position
+    var marker = L.marker([41.2995, 69.2401], {
+        draggable: true
+    }).addTo(mapSelector);
+    
+    // Update coordinates when marker is moved
+    marker.on('dragend', function(event) {
+        var position = marker.getLatLng();
+        document.getElementById('latitude').value = position.lat.toFixed(6);
+        document.getElementById('longitude').value = position.lng.toFixed(6);
+    });
+    
+    // Update marker position when coordinates are changed manually
+    document.getElementById('latitude').addEventListener('change', updateMarkerPosition);
+    document.getElementById('longitude').addEventListener('change', updateMarkerPosition);
+    
+    function updateMarkerPosition() {
+        var lat = parseFloat(document.getElementById('latitude').value);
+        var lng = parseFloat(document.getElementById('longitude').value);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+            marker.setLatLng([lat, lng]);
+            mapSelector.setView([lat, lng], 13);
+        }
+    }
+    
+    // Set active tab if URL has hash
+    const hash = window.location.hash;
+    if (hash) {
+        const tabId = hash.replace('#', '');
+        const tab = document.getElementById(tabId + '-tab');
+        if (tab) {
+            tab.click();
+        }
+    }
+    
+    // Disable price inputs for unchecked fuel types
+    document.querySelectorAll('[id^="add_"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const fuelType = this.id.replace('add_', '');
+            const priceInput = document.getElementById(`price_${fuelType}`);
+            
+            if (this.checked) {
+                priceInput.removeAttribute('disabled');
+            } else {
+                priceInput.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,226 @@
+/* Main styles for Yoqilg'i Quyish Stansiyalari */
+
+/* Global styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+/* Navbar customization */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.7rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link:focus {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+/* Common Card Styling */
+.custom-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.custom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.custom-card-header {
+    background-color: #0d6efd;
+    color: white;
+    padding: 15px;
+}
+
+.custom-card-body {
+    padding: 20px;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 5px;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.25);
+}
+
+.btn-outline-primary {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.25);
+}
+
+/* Forms */
+.form-control, .form-select {
+    border-radius: 5px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+    height: calc(3.5rem + 2px);
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+    padding: 1rem 0.75rem;
+}
+
+/* Footer */
+footer {
+    background-color: #343a40;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 3rem 0 2rem;
+    margin-top: 4rem;
+}
+
+footer a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.social-links a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+    text-decoration: none;
+}
+
+/* Map */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.leaflet-popup-content {
+    margin: 10px;
+}
+
+.leaflet-popup-content a.btn {
+    margin-top: 10px;
+}
+
+/* Star Rating */
+.star-rating-input .btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+    width: 40px;
+}
+
+.star-rating-input .btn-check:checked + .btn-outline-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+/* Status indicators */
+.status-open {
+    color: #198754;
+}
+
+.status-closed {
+    color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 767.98px) {
+    .hero-section {
+        padding: 50px 0;
+    }
+    
+    .search-box {
+        margin-top: -30px;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Placeholder for station images */
+.station-image-placeholder {
+    background-color: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+}
+
+/* Price tag style */
+.price-tag {
+    display: inline-block;
+    background-color: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: bold;
+}

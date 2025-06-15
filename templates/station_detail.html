@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}{{ station.name }} - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<style>
+    #stationMap {
+        height: 400px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .station-image {
+        height: 300px;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('https://images.unsplash.com/photo-1545459720-adf272739294?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80');
+        background-size: cover;
+        background-position: center;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-bottom: 20px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    .station-info-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .station-info-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 15px;
+        position: relative;
+    }
+    .station-info-body {
+        padding: 15px;
+    }
+    .station-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .station-service-icon {
+        margin-right: 10px;
+        color: #0d6efd;
+        font-size: 1.5rem;
+    }
+    .fuel-price-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .fuel-price-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+    .review-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+    }
+    .review-header {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+    }
+    .review-body {
+        padding: 15px;
+    }
+    .star-rating {
+        color: #ffc107;
+    }
+    .favorite-btn {
+        color: #dc3545;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+    .favorite-btn:hover {
+        transform: scale(1.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Station Header -->
+    <div class="station-image">
+        <h1 class="display-4">{{ station.name }}</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Station Info -->
+            <div class="station-info-card">
+                <div class="station-info-header">
+                    <h2>Stansiya ma'lumotlari</h2>
+                    {% if station.is_open %}
+                    <span class="station-status bg-success">Ochiq</span>
+                    {% else %}
+                    <span class="station-status bg-danger">Yopiq</span>
+                    {% endif %}
+                </div>
+                <div class="station-info-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><i class="fas fa-map-marker-alt me-2"></i> <strong>Manzil:</strong> {{ station.address }}</p>
+                            <p><i class="fas fa-city me-2"></i> <strong>Shahar:</strong> {{ station.city }}</p>
+                            <p><i class="fas fa-phone me-2"></i> <strong>Telefon:</strong> {{ station.phone }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><i class="fas fa-clock me-2"></i> <strong>Ish vaqti:</strong> {{ station.opening_hours }}</p>
+                            <p>
+                                <strong>Xizmatlar:</strong><br>
+                                <div class="mt-2">
+                                    {% if station.has_shop %}<i class="fas fa-shopping-cart station-service-icon" title="Do'kon"></i>{% endif %}
+                                    {% if station.has_cafe %}<i class="fas fa-coffee station-service-icon" title="Kafe"></i>{% endif %}
+                                    {% if station.has_carwash %}<i class="fas fa-car station-service-icon" title="Avtoyuvish"></i>{% endif %}
+                                    {% if station.has_toilet %}<i class="fas fa-restroom station-service-icon" title="Tualet"></i>{% endif %}
+                                    {% if station.accepts_card %}<i class="fas fa-credit-card station-service-icon" title="Karta bilan to'lash"></i>{% endif %}
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Favorite Button -->
+                    {% if session.get('user_id') %}
+                    <div class="text-end mt-3">
+                        <button id="favorite-btn" class="btn btn-outline-danger" data-station-id="{{ station.id }}" data-is-favorite="{{ 'true' if is_favorite else 'false' }}">
+                            <i class="fas {{ 'fa-heart' if is_favorite else 'fa-heart-broken' }}"></i>
+                            <span id="favorite-text">{{ 'Sevimlilardan o\'chirish' if is_favorite else 'Sevimlilarga qo\'shish' }}</span>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Station Location -->
+            <div class="station-info-card">
+                <div class="station-info-header">
+                    <h2>Joylashuv</h2>
+                </div>
+                <div class="station-info-body">
+                    <div id="stationMap"></div>
+                    <div class="text-center mt-3">
+                        <a href="https://www.google.com/maps/dir/?api=1&destination={{ station.latitude }},{{ station.longitude }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-directions me-1"></i> Yo'nalish olish
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reviews -->
+            <div class="station-info-card">
+                <div class="station-info-header">
+                    <h2>Foydalanuvchi sharhlari</h2>
+                </div>
+                <div class="station-info-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="review-card">
+                            <div class="review-header d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ review.user.username }}</strong>
+                                    <div class="star-rating">
+                                        {% for i in range(5) %}
+                                            {% if i < review.rating %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="text-muted small">
+                                    {{ review.created_at.strftime('%d.%m.%Y') }}
+                                </div>
+                            </div>
+                            <div class="review-body">
+                                <p>{{ review.comment }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                            <p>Bu stansiya haqida hali sharhlar yo'q.</p>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Add Review Form -->
+                    {% if session.get('user_id') %}
+                    <div class="mt-4">
+                        <h4>Sharh qoldirish</h4>
+                        <form action="{{ url_for('submit_review', station_id=station.id) }}" method="POST">
+                            <div class="mb-3">
+                                <label for="rating" class="form-label">Baholash</label>
+                                <div class="star-rating-input">
+                                    <div class="btn-group" role="group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" class="btn-check" name="rating" id="rating{{ i }}" value="{{ i }}" autocomplete="off" required>
+                                        <label class="btn btn-outline-warning" for="rating{{ i }}">{{ i }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comment" class="form-label">Izoh</label>
+                                <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Yuborish</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mt-4">
+                        Sharh qoldirish uchun <a href="{{ url_for('login') }}">tizimga kiring</a>.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Fuel Prices -->
+            <div class="station-info-card">
+                <div class="station-info-header">
+                    <h2>Yoqilg'i narxlari</h2>
+                </div>
+                <div class="station-info-body">
+                    {% for fuel in fuels %}
+                        {% if fuel.available %}
+                        <div class="fuel-price-item">
+                            <span>{{ fuel.type }}</span>
+                            <span class="fuel-price-value">{{ fuel.price }} so'm</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="text-center mt-3">
+                        <p class="text-muted small">Oxirgi yangilanish: {{ fuels[0].updated_at.strftime('%d.%m.%Y %H:%M') if fuels else 'Ma\'lumot yo\'q' }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Price History Chart -->
+            <div class="station-info-card">
+                <div class="station-info-header">
+                    <h2>Narx tarixi</h2>
+                </div>
+                <div class="station-info-body">
+                    <canvas id="priceHistoryChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Report Issue -->
+            <div class="station-info-card">
+                <div class="station-info-header">
+                    <h2>Xatolik haqida xabar berish</h2>
+                </div>
+                <div class="station-info-body">
+                    {% if session.get('user_id') %}
+                    <form action="{{ url_for('contact') }}" method="POST">
+                        <input type="hidden" name="subject" value="Stansiya ma'lumotlaridagi xatolik: {{ station.name }}">
+                        <div class="mb-3">
+                            <label for="report-message" class="form-label">Xabar</label>
+                            <textarea class="form-control" id="report-message" name="message" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Xabar berish
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Xatolik haqida xabar berish uchun <a href="{{ url_for('login') }}">tizimga kiring</a>.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize map
+    // var stationMap = L.map('stationMap').setView([{{ station.latitude }}, {{ station.longitude }}], 15);
+    
+    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // }).addTo(stationMap);
+    
+    // // Add station marker
+    // var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}])
+    //     .addTo(stationMap)
+    //     .bindPopup("<strong>{{ station.name }}</strong><br>{{ station.address }}");
+    
+    // Price history chart
+ //   const priceHistoryData = {{ price_history|safe }};
+    
+    if (Object.keys(priceHistoryData).length > 0) {
+        const ctx = document.getElementById('priceHistoryChart').getContext('2d');
+        
+        const datasets = [];
+        const colors = {
+            'AI-92': 'rgba(255, 99, 132, 1)',
+            'AI-95': 'rgba(54, 162, 235, 1)',
+            'Diesel': 'rgba(255, 206, 86, 1)',
+            'Gas': 'rgba(75, 192, 192, 1)'
+        };
+        
+        for (const [fuelType, data] of Object.entries(priceHistoryData)) {
+            if (data.dates.length > 0) {
+                datasets.push({
+                    label: fuelType,
+                    data: data.prices.reverse(),
+                    borderColor: colors[fuelType],
+                    backgroundColor: colors[fuelType].replace('1)', '0.1)'),
+                    tension: 0.1
+                });
+            }
+        }
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Object.values(priceHistoryData)[0].dates.reverse(),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Narx tarixi (so\'m)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('priceHistoryChart').innerHTML = '<div class="text-center py-4"><p>Narx tarixi ma\'lumotlari mavjud emas</p></div>';
+    }
+    
+    // Favorite button functionality
+    const favoriteBtn = document.getElementById('favorite-btn');
+    if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', function() {
+            const stationId = this.getAttribute('data-station-id');
+            const isFavorite = this.getAttribute('data-is-favorite') === 'true';
+            
+            fetch(`/toggle_favorite/${stationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'added') {
+                        this.setAttribute('data-is-favorite', 'true');
+                        document.getElementById('favorite-text').textContent = 'Sevimlilardan o\'chirish';
+                        this.querySelector('i').classList.remove('fa-heart-broken');
+                        this.querySelector('i').classList.add('fa-heart');
+                    } else {
+                        this.setAttribute('data-is-favorite', 'false');
+                        document.getElementById('favorite-text').textContent = 'Sevimlilarga qo\'shish';
+                        this.querySelector('i').classList.remove('fa-heart');
+                        this.querySelector('i').classList.add('fa-heart-broken');
+                    }
+                });
+        });
+    }
+</script>
+{% endblock %}

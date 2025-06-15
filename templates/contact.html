@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Bog'lanish - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<style>
+    .contact-banner {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1563237023-c4c282a8b75e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 40px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    .contact-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    .contact-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 20px;
+    }
+    .contact-body {
+        padding: 30px;
+    }
+    .contact-info-icon {
+        width: 60px;
+        height: 60px;
+        background-color: #e9ecef;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        color: #0d6efd;
+        font-size: 1.5rem;
+    }
+    .contact-info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Contact Banner -->
+<section class="contact-banner">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">Biz bilan bog'laning</h1>
+        <p class="lead">Savolingiz bormi? Bizga xabar yuboring va biz tez orada javob beramiz.</p>
+    </div>
+</section>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Contact Form -->
+            <div class="contact-card">
+                <div class="contact-header">
+                    <h2><i class="fas fa-envelope me-2"></i> Xabar yuborish</h2>
+                </div>
+                <div class="contact-body">
+                    {% if session.get('user_id') %}
+                        <form action="{{ url_for('contact') }}" method="POST">
+                            <div class="mb-3">
+                                <label for="subject" class="form-label">Mavzu</label>
+                                <input type="text" class="form-control" id="subject" name="subject" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Xabar</label>
+                                <textarea class="form-control" id="message" name="message" rows="6" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Yuborish</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Xabar yuborish uchun avval <a href="{{ url_for('login') }}">tizimga kiring</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Contact Info -->
+            <div class="contact-card">
+                <div class="contact-header">
+                    <h2><i class="fas fa-info-circle me-2"></i> Bog'lanish ma'lumotlari</h2>
+                </div>
+                <div class="contact-body">
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <h5>Manzil</h5>
+                            <p>Toshkent, O'zbekiston</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div>
+                            <h5>Telefon</h5>
+                            <p>+998 99 123 45 67</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h5>Email</h5>
+                            <p>info@yoqilgi.uz</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <h5>Ish vaqti</h5>
+                            <p>Dushanba - Juma: 9:00 - 18:00<br>
+                            Shanba - Yakshanba: Yopiq</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Social Media -->
+            <div class="contact-card">
+                <div class="contact-header">
+                    <h2><i class="fas fa-share-alt me-2"></i> Ijtimoiy tarmoqlar</h2>
+                </div>
+                <div class="contact-body text-center">
+                    <div class="d-flex justify-content-around">
+                        <a href="#" class="btn btn-outline-primary btn-lg">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-info btn-lg">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-danger btn-lg">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-lg">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

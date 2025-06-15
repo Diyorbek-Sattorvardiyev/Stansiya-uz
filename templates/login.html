@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Tizimga kirish - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<style>
+    .login-card {
+        max-width: 500px;
+        margin: 50px auto;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .login-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    .login-body {
+        padding: 30px;
+    }
+    .login-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-sign-in-alt login-icon"></i>
+            <h2>Tizimga kirish</h2>
+        </div>
+        <div class="login-body">
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Foydalanuvchi nomi</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">Parol</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Kirish</button>
+                </div>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p>Hisobingiz yo'qmi? <a href="{{ url_for('register') }}">Ro'yxatdan o'ting</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

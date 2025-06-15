@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Sevimli stansiyalarim - Yoqilg'i Quyish Stansiyalari{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<style>
+    .page-header {
+        background-color: #f8f9fa;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+    #favoritesMap {
+        height: 400px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    .station-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .station-card:hover {
+        transform: translateY(-5px);
+    }
+    .station-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 15px;
+        position: relative;
+    }
+    .station-body {
+        padding: 15px;
+    }
+    .station-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .station-service-icon {
+        margin-right: 10px;
+        color: #0d6efd;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 50px 0;
+    }
+    .empty-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header text-center">
+        <h1 class="display-5"><i class="fas fa-heart me-3"></i>Sevimli stansiyalarim</h1>
+        <p class="lead">Sizning sevimli yoqilg'i quyish stansiyalaringiz</p>
+    </div>
+    
+    {% if stations %}
+        <!-- Map with favorites -->
+        <div id="favoritesMap"></div>
+        
+        <!-- Stations List -->
+        <div class="row">
+            {% for station in stations %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="station-card h-100">
+                    <div class="station-header">
+                        <h3>{{ station.name }}</h3>
+                        {% if station.is_open %}
+                        <span class="station-status bg-success">Ochiq</span>
+                        {% else %}
+                        <span class="station-status bg-danger">Yopiq</span>
+                        {% endif %}
+                    </div>
+                    <div class="station-body">
+                        <p><i class="fas fa-map-marker-alt me-2"></i>{{ station.address }}</p>
+                        <p><i class="fas fa-city me-2"></i>{{ station.city }}</p>
+                        
+                        <hr>
+                        
+                        <div class="mb-3">
+                            <h5>Yoqilg'i narxlari:</h5>
+                            <ul class="list-unstyled">
+                                {% for fuel in station.fuels %}
+                                {% if fuel.available %}
+                                <li class="mb-1">{{ fuel.type }}: <strong class="text-primary">{{ fuel.price }} so'm</strong></li>
+                                {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h5>Xizmatlar:</h5>
+                            <div>
+                                {% if station.has_shop %}<i class="fas fa-shopping-cart station-service-icon" title="Do'kon"></i>{% endif %}
+                                {% if station.has_cafe %}<i class="fas fa-coffee station-service-icon" title="Kafe"></i>{% endif %}
+                                {% if station.has_carwash %}<i class="fas fa-car station-service-icon" title="Avtoyuvish"></i>{% endif %}
+                                {% if station.has_toilet %}<i class="fas fa-restroom station-service-icon" title="Tualet"></i>{% endif %}
+                                {% if station.accepts_card %}<i class="fas fa-credit-card station-service-icon" title="Karta bilan to'lash"></i>{% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex mt-3">
+                            <a href="{{ url_for('station_detail', station_id=station.id) }}" class="btn btn-primary flex-grow-1 me-2">
+                                <i class="fas fa-info-circle me-1"></i> Batafsil
+                            </a>
+                            <button class="btn btn-outline-danger remove-favorite-btn" data-station-id="{{ station.id }}">
+                                <i class="fas fa-heart-broken"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="far fa-heart"></i>
+            </div>
+            <h3>Hozircha sevimli stansiyalar yo'q</h3>
+            <p class="text-muted">Stansiyalarni sevimlilarga qo'shish uchun stansiya sahifasida "Sevimlilarga qo'shish" tugmasini bosing.</p>
+            <a href="{{ url_for('stations') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-list me-1"></i> Stansiyalarni ko'rish
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script>
+    // {% if stations %}
+    // // Initialize map
+    // var favoritesMap = L.map('favoritesMap').setView([41.2995, 69.2401], 12);
+    
+    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // }).addTo(favoritesMap);
+    
+    // // Add markers for favorite stations
+    // var stations = [
+    //     {% for station in stations %}
+    //     {
+    //         id: {{ station.id }},
+    //         name: "{{ station.name }}",
+    //         lat: {{ station.latitude }},
+    //         lng: {{ station.longitude }},
+    //         address: "{{ station.address }}",
+    //         city: "{{ station.city }}",
+    //         is_open: {% if station.is_open %}true{% else %}false{% endif %}
+    //     },
+    //     {% endfor %}
+    // ];
+    
+    // Create bounds to fit all stations
+    var bounds = L.latLngBounds();
+    
+    stations.forEach(station => {
+        var popupContent = `
+            <strong>${station.name}</strong><br>
+            <i class="fas fa-map-marker-alt"></i> ${station.address}<br>
+            <i class="fas fa-city"></i> ${station.city}<br><br>
+            <a href="/station/${station.id}" class="btn btn-sm btn-primary">Batafsil</a>
+        `;
+        
+        var marker = L.marker([station.lat, station.lng])
+            .addTo(favoritesMap)
+            .bindPopup(popupContent);
+            
+        // Use different icon color based on station status
+        var iconClass = station.is_open ? 'text-success' : 'text-danger';
+        marker._icon.classList.add(iconClass);
+        
+        // Add this point to the bounds
+        bounds.extend([station.lat, station.lng]);
+    });
+    
+    // Fit the map to show all markers
+    // favoritesMap.fitBounds(bounds, { padding: [50, 50] });
+    // {% endif %}
+    
+    // Remove favorite functionality
+    const removeBtns = document.querySelectorAll('.remove-favorite-btn');
+    removeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const stationId = this.getAttribute('data-station-id');
+            
+            fetch(`/toggle_favorite/${stationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'removed') {
+                        // Remove the card from the UI
+                        this.closest('.col-md-6').remove();
+                        
+                        // Check if there are any stations left
+                        const remainingStations = document.querySelectorAll('.station-card');
+                        if (remainingStations.length === 0) {
+                            // Reload the page to show empty state
+                            window.location.reload();
+                        }
+                    }
+                });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Xabarga javob berish - Admin panel{% endblock %}
+
+{% block head %}
+<style>
+    .admin-sidebar {
+        background-color: #343a40;
+        color: white;
+        min-height: calc(100vh - 56px);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 56px;
+    }
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.75);
+        padding: 0.8rem 1rem;
+        border-radius: 0;
+    }
+    .admin-sidebar .nav-link:hover {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .admin-sidebar .nav-link.active {
+        color: white;
+        background-color: #0d6efd;
+    }
+    .admin-sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    .message-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .message-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        background-color: #f8f9fa;
+    }
+    .message-body {
+        padding: 15px;
+    }
+    .user-info {
+        background-color: #e9ecef;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .user-info-item {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .user-info-label {
+        width: 120px;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar d-md-block d-none">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_stations') }}">
+                            <i class="fas fa-gas-pump"></i>
+                            Stansiyalar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users"></i>
+                            Foydalanuvchilar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_messages') }}">
+                            <i class="fas fa-envelope"></i>
+                            Xabarlar
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-arrow-left"></i>
+                            Saytga qaytish
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-reply me-2"></i>Xabarga javob berish</h1>
+                <div class="d-md-none">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="mobileMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            Menyu
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMenuBtn">
+                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_stations') }}"><i class="fas fa-gas-pump me-2"></i>Stansiyalar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}"><i class="fas fa-users me-2"></i>Foydalanuvchilar</a></li>
+                            <li><a class="dropdown-item active" href="{{ url_for('admin_messages') }}"><i class="fas fa-envelope me-2"></i>Xabarlar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('index') }}"><i class="fas fa-arrow-left me-2"></i>Saytga qaytish</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <a href="{{ url_for('admin_messages') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Orqaga
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Message -->
+                    <div class="message-card">
+                        <div class="message-header">
+                            <h4>{{ message.subject }}</h4>
+                            <div class="text-muted">
+                                Yuborilgan vaqt: {{ message.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </div>
+                        </div>
+                        <div class="message-body">
+                            <p>{{ message.message }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Reply Form -->
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-reply me-2"></i>Javob berish</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('admin_message_reply', message_id=message.id) }}" method="POST">
+                                <div class="mb-3">
+                                    <label for="response" class="form-label">Javob matni</label>
+                                    <textarea class="form-control" id="response" name="response" rows="6" required>{{ message.response }}</textarea>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin_messages') }}" class="btn btn-secondary">Bekor qilish</a>
+                                    <button type="submit" class="btn btn-primary">Javobni yuborish</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- User Info -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-user me-2"></i>Foydalanuvchi ma'lumotlari</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="user-info">
+                                <div class="user-info-item">
+                                    <div class="user-info-label">Foydalanuvchi:</div>
+                                    <div>{{ user.username }}</div>
+                                </div>
+                                <div class="user-info-item">
+                                    <div class="user-info-label">Email:</div>
+                                    <div>{{ user.email }}</div>
+                                </div>
+                                <div class="user-info-item">
+                                    <div class="user-info-label">Ro'yxatdan o'tgan:</div>
+                                    <div>{{ user.created_at.strftime('%d.%m.%Y') }}</div>
+                                </div>
+                            </div>
+                            
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-info btn-sm w-100">
+                                <i class="fas fa-user-cog me-1"></i> Foydalanuvchi profilini ko'rish
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Info -->
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Xabar ma'lumotlari</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    ID
+                                    <span class="badge bg-primary rounded-pill">{{ message.id }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Status
+                                    {% if not message.is_read %}
+                                    <span class="badge bg-warning text-dark">Yangi</span>
+                                    {% elif not message.response %}
+                                    <span class="badge bg-info">Javob kutmoqda</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Javob berilgan</span>
+                                    {% endif %}
+                                </li>
+                                {% if message.response %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Javob berilgan
+                                    <span>{{ message.responded_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
