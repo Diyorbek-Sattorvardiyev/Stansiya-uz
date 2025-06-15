@@ -51,6 +51,8 @@ Ushbu veb-ilova foydalanuvchilarga yoqilg‘i quyish stansiyalarini ko‘rish, q
 ![image](https://github.com/user-attachments/assets/60a6c5e5-32b0-49f4-bf90-df0d0a300f7e)
 ![image](https://github.com/user-attachments/assets/bdf38665-371d-4048-bbca-1e4236c1f39b)
 ![image](https://github.com/user-attachments/assets/90187454-58f8-4946-b2cb-c3d230a04ed2)
+![image](https://github.com/user-attachments/assets/c06ea1a9-7839-40c8-ac57-bb110b7c7b26)
+![image](https://github.com/user-attachments/assets/8c683948-dd1b-43a8-abb7-fedecb6175a7)
 
 
 
